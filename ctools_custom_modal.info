@@ -1,0 +1,5 @@
+name = Ctools custom modal
+description = Demo of custom ctools modal
+core = 7.x
+package = custom
+dependencies[] = ctools

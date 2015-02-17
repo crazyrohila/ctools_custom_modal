@@ -1,0 +1,115 @@
+<?php
+
+/**
+ * @file Ctools custom modal popup.
+ */
+
+/**
+ * Implements hook_menu().
+ */
+function ctools_custom_modal_menu() {
+  $items = array();
+
+  // Menu for ctools modal
+  $items['ctools-custom-menu/%ctools_js'] = array(
+    'page callback' => '_ctools_custom_modal_callback',
+    'page arguments' => array(1),
+    'access callback' => TRUE,
+    'type' => MENU_CALLBACK,
+  );
+
+  return $items;
+}
+
+/**
+ * Ajax menu callback.
+ */
+function _ctools_custom_modal_callback($ajax) {
+  global $user;
+
+  // Content in modal box.
+  $output = 'Your Name is : ' . $user->name;
+
+  // If ajax then popup modalbox otherwise redirect to page.
+  if ($ajax) {
+    // Include ctools libs
+    ctools_include('ajax');
+    ctools_include('modal');
+    ctools_modal_add_js();
+
+    // Create our own javascript that will be used to theme a modal.
+    // 'custom-popup-class' will be appended to ctools-modal and will use this on link which will trigger modal. eg. `ctools-modal-custom-popup-class`, see line#98.
+    // 'ctools_custom_modal_html' modalTheme will be name of theme function which will be used in js file. see js file in folder.
+    //
+    drupal_add_js(array(
+      'custom-popup-class' => array(
+        'modalSize' => array(
+          'type' => 'fixed',
+          'width' => 500,
+          'height' => 300,
+        ),
+        'modalOptions' => array(
+          'opacity' => .9,
+          'background-color' => '#000',
+        ),
+        'modalTheme' => 'ctools_custom_modal_html',
+        'closeText' => 'X',
+        'closeImage' => '',
+        'animation' => fadeIn,
+        'animationSpeed' => slow,
+        'throbber' => '',
+        'loadingText' => 'loading...',
+      ),
+    ), 'setting');
+
+    // Include our js file. `ctools-custom-modal-html` is file name and default folder is `js`. So ctools will find for `js/ctools-custom-modal-html.js` in `ctools_custom_modal` module.
+    ctools_add_js('ctools-custom-modal-html', 'ctools_custom_modal');
+
+    $output = '<div class="ctools-content-wrapper">' . $output . '</div>';
+
+    // return modal box with content
+    return ctools_modal_render('', $output);
+  }
+  else {
+    $output = '<div class="content-wrapper">' . $output . '</div>';
+    return $output;
+  }
+}
+
+/**
+ * Now will create a block with just a simple link which will use two classes, first `ctools-modal-custom-popup-class` for modal and second `use-ajax` to enable ajax on link. This link will have url to hook_menu defined above.
+ */
+
+/**
+ * Implements hook_block_info().
+ */
+function ctools_custom_modal_block_info() {
+  $blocks['ctools_modal_custom'] = array(
+    'info' => t('ctools custom modals'),
+    'cache' => DRUPAL_NO_CACHE
+  );
+
+  return $blocks;
+}
+
+/**
+ * Implements hook_block_view().
+ */
+function ctools_custom_modal_block_view($delta = '') {
+  $block = array();
+
+  // Default modal
+  $defaul_modal = l('Default Modal!', 'ctools-custom-menu/nojs', array('attributes' => array('class' => array('use-ajax', 'ctools-modal'))));
+
+  // New modal
+  $new_modal = l('New Modal!', 'ctools-custom-menu/nojs', array('attributes' => array('class' => array('use-ajax', 'ctools-modal-custom-popup-class'))));
+
+  switch ($delta) {
+    case 'ctools_modal_custom':
+      $block['subject'] = t('Ctools custom modal link');
+      $block['content'] = $defaul_modal . '<p>' . $new_modal . '</p>';
+      break;
+
+  }
+  return $block;
+}
